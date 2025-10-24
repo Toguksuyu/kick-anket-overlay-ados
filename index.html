@@ -1,105 +1,16 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kick Anket Göstergesi</title>
-    
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-
-    <style>
-        /* OBS için temel stiller */
-        body {
-            /* En önemlisi: Arka plan şeffaf olmalı */
-            background-color: transparent;
-            color: white;
-            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* Kaydırma çubukları görünmesin */
-        }
-
-        #poll-container {
-            /* Konumlandırmayı kolaylaştırmak için bir kapsayıcı */
-            position: absolute;
-            bottom: 50px; /* Ekranın altına yakın (değiştirebilirsiniz) */
-            left: 20px;   /* Ekranın soluna yakın (değiştirebilirsiniz) */
-            width: 450px; /* Anket kutusunun genişliği */
-            
-            /* Görünüm stilleri */
-            background-color: rgba(10, 10, 20, 0.85); /* Hafif şeffaf koyu arka plan */
-            border: 2px solid #53fc18; /* Kick'in yeşil rengi */
-            border-radius: 10px;
-            padding: 20px;
-            
-            /* Metin stilleri */
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Metin okunaklılığı için gölge */
-            
-            /* Başlangıçta görünmez yapıp, anket gelince görünür yapacağız */
-            opacity: 0;
-            transform: translateY(20px); /* Aşağıdan yumuşak giriş animasyonu için */
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
-
-        /* Anket kutusu görünür olduğunda */
-        #poll-container.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Anket Sorusu */
-        .poll-question {
-            font-size: 24px;
-            font-weight: bold;
-            border-bottom: 2px solid #53fc18;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            word-wrap: break-word; /* Uzun sorular satır atlasın */
-        }
-
-        /* Anket Seçenekleri */
-        .poll-options {
-            list-style-type: none;
-            padding-left: 0;
-            font-size: 20px;
-        }
-
-        .poll-options li {
-            padding: 5px 0;
-            word-wrap: break-word;
-        }
-
-        /* Bağlantı durumu veya hatalar için */
-        .status-message {
-            font-size: 16px;
-            color: #aaa;
-        }
-        .error-message {
-            font-size: 16px;
-            color: #ff4d4d;
-        }
-
-    </style>
-</head>
-<body>
-
-    <div id="poll-container">
-        </div>
-
-    <script>
+<script>
         // ------- AYARLAR -------
-        // Kanal ID'niz (ados için 7505488)
-        const KICK_CHANNEL_ID = 7505488;
+        // Senin bulduğun DOĞRUDAN CHATROOM ID'si
+        const KICK_CHATROOM_ID = 7505488;
         
-        // Kick'in Pusher (WebSocket) bilgileri
+        // Kick'in Pusher (WebSocket) bilgileri (DEĞİŞMEYECEK)
         const PUSHER_APP_KEY = 'eb1d5f283081a78b932c';
         const PUSHER_CLUSTER = 'us-1';
         // ---------------------
 
         const pollContainer = document.getElementById('poll-container');
 
-        // Bu fonksiyon, "test" gibi metinleri &lt;test&gt; gibi güvenli hale getirir
-        // Chat'ten gelen veriyi ekrana basarken güvenlik için önemlidir.
+        // HTML Güvenliği ve Temizliği için Fonksiyon
         function escapeHTML(str) {
             return str.replace(/[&<>"']/g, function(m) {
                 return {
@@ -117,19 +28,15 @@
             console.log("Anket komutu algılandı:", command);
             
             // Regex ile tırnak içindeki tüm metinleri buluyoruz
-            // Örnek: !poll "Soru" "1" "2" -> ["Soru", "1", "2"]
             const regex = /"([^"]*)"/g;
             const parts = [...command.matchAll(regex)].map(match => match[1]);
 
-            // En az bir soru ve bir seçenek olmalı (toplam 2 tırnaklı bölüm)
             if (parts.length < 2) {
-                console.warn("Geçersiz anket formatı. En az 1 soru ve 1 seçenek gerekli.");
+                console.warn("Geçersiz anket formatı.");
                 return;
             }
 
-            // İlk parça sorudur
             const question = parts[0];
-            // Geri kalanlar seçeneklerdir
             const options = parts.slice(1);
 
             // HTML'i oluştur
@@ -137,7 +44,6 @@
             pollHTML += '<ul class="poll-options">';
             
             options.forEach((option, index) => {
-                // Seçenekleri "1. Cevap", "2. Cevap" şeklinde listeliyoruz
                 pollHTML += `<li>${index + 1}. ${escapeHTML(option)}</li>`;
             });
             
@@ -146,32 +52,32 @@
             // Oluşturulan HTML'i ekrana bas ve görünür yap
             pollContainer.innerHTML = pollHTML;
             pollContainer.classList.add('visible');
+            
+            // Anket 60 saniye sonra otomatik kapanacak (isteğe bağlı)
+            // Ya da !anketkapat komutu ile manuel kapanacak.
+            /*
+            setTimeout(() => {
+                 pollContainer.classList.remove('visible');
+                 setTimeout(() => { pollContainer.innerHTML = ''; }, 500);
+            }, 60000); 
+            */
         }
 
         // Kick chat'ine bağlanmak için ana fonksiyon
-        async function connectToKickChat() {
+        function connectToKickChat() {
             try {
-                // 1. Adım: Kanal ID'sini kullanarak Chatroom ID'sini almamız gerekiyor.
-                // Kick API v2'ye istek atıyoruz.
-                const response = await fetch(`https://kick.com/api/v2/channels/${KICK_CHANNEL_ID}`);
-                if (!response.ok) {
-                    throw new Error(`Kanal bilgisi alınamadı (HTTP ${response.status})`);
-                }
-                const channelData = await response.json();
-                const chatroomId = channelData.chatroom.id;
+                
+                pollContainer.innerHTML = `<div class="status-message">Bağlantı kuruluyor... (Chatroom ID: ${KICK_CHATROOM_ID})</div>`;
+                pollContainer.classList.add('visible'); 
 
-                console.log(`Kanal (ados) bulundu. Chatroom ID: ${chatroomId}`);
-                pollContainer.innerHTML = `<div class="status-message">Bağlantı kuruluyor... (ID: ${chatroomId})</div>`;
-                pollContainer.classList.add('visible'); // Durumu göstermek için aç
-
-                // 2. Adım: Pusher (WebSocket) ile chat'e bağlan
+                // Pusher (WebSocket) ile chat'e bağlan
                 const pusher = new Pusher(PUSHER_APP_KEY, {
                     cluster: PUSHER_CLUSTER,
                     forceTLS: true
                 });
 
                 // Doğru chat odası kanalına abone ol
-                const channel = pusher.subscribe(`chat-room.${chatroomId}`);
+                const channel = pusher.subscribe(`chat-room.${KICK_CHATROOM_ID}`);
 
                 // Bağlantı başarılı olduğunda
                 pusher.connection.bind('connected', () => {
@@ -180,7 +86,7 @@
                     // 5 saniye sonra "Bağlandı" mesajını gizle
                     setTimeout(() => {
                         pollContainer.classList.remove('visible');
-                        pollContainer.innerHTML = ''; // İçeriği temizle
+                        pollContainer.innerHTML = ''; 
                     }, 5000);
                 });
 
@@ -191,39 +97,33 @@
                     pollContainer.classList.add('visible');
                 });
 
-                // 3. Adım: Yeni chat mesajlarını dinle
-                // Kick, 'App\Events\ChatMessageEvent' adında bir event gönderir
+                // Yeni chat mesajlarını dinle
                 channel.bind('App\\Events\\ChatMessageEvent', (data) => {
-                    // Gelen veri JSON formatında bir string, onu parse etmemiz gerek
                     const messageData = JSON.parse(data.data);
                     
-                    const messageContent = messageData.message;
+                    const messageContent = messageData.message.trim();
                     const sender = messageData.sender.username;
 
                     console.log(`${sender}: ${messageContent}`);
 
-                    // Bizim komutumuzu kontrol et
+                    // Anket Komutu Kontrolü
                     if (messageContent.startsWith('!poll ')) {
-                        // Komutu bulan kişi yayıncı mı veya moderatör mü diye kontrol edilebilir
-                        // Şimdilik herkesin kullanabildiğini varsayalım
-                        // (Güvenlik için normalde burada bir 'sender' kontrolü yapılır)
                         parseAndDisplayPoll(messageContent);
                     }
                     
-                    // Anketi kapatmak için ek bir komut (Örn: !endpoll)
-                    if (messageContent.trim() === '!anketkapat' || messageContent.trim() === '!endpoll') {
+                    // Anketi kapatmak için komut
+                    if (messageContent === '!anketkapat' || messageContent === '!endpoll') {
                          console.log("Anket kapatma komutu alındı.");
                          pollContainer.classList.remove('visible');
-                         // Animasyonun bitmesi için biraz bekle sonra içeriği temizle
                          setTimeout(() => {
                             pollContainer.innerHTML = '';
-                         }, 500); // 0.5s (CSS transition süresi ile aynı)
+                         }, 500); 
                     }
                 });
 
             } catch (error) {
-                console.error("Kick chat'e bağlanırken hata oluştu:", error);
-                pollContainer.innerHTML = `<div class="error-message">Hata: ${error.message}. Kanal ID'sini kontrol edin.</div>`;
+                console.error("Kick chat'e bağlanırken kritik hata oluştu:", error);
+                pollContainer.innerHTML = `<div class="error-message">Kritik Hata: Bağlantı başlatılamadı.</div>`;
                 pollContainer.classList.add('visible');
             }
         }
@@ -232,6 +132,3 @@
         document.addEventListener('DOMContentLoaded', connectToKickChat);
 
     </script>
-</body>
-</html>
-
