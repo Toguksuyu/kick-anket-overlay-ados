@@ -1,4 +1,92 @@
-<script>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kick Anket Göstergesi</title>
+    
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+
+    <style>
+        /* OBS için temel stiller */
+        body {
+            /* En önemlisi: Arka plan şeffaf olmalı */
+            background-color: transparent;
+            color: white;
+            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Kaydırma çubukları görünmesin */
+        }
+
+        #poll-container {
+            /* Konumlandırmayı kolaylaştırmak için bir kapsayıcı */
+            position: absolute;
+            bottom: 50px; /* Ekranın altına yakın (değiştirebilirsiniz) */
+            left: 20px;   /* Ekranın soluna yakın (değiştirebilirsiniz) */
+            width: 450px; /* Anket kutusunun genişliği */
+            
+            /* Görünüm stilleri */
+            background-color: rgba(10, 10, 20, 0.85); /* Hafif şeffaf koyu arka plan */
+            border: 2px solid #53fc18; /* Kick'in yeşil rengi */
+            border-radius: 10px;
+            padding: 20px;
+            
+            /* Metin stilleri */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Metin okunaklılığı için gölge */
+            
+            /* Başlangıçta görünmez yapıp, anket gelince görünür yapacağız */
+            opacity: 0;
+            transform: translateY(20px); /* Aşağıdan yumuşak giriş animasyonu için */
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        /* Anket kutusu görünür olduğunda */
+        #poll-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Anket Sorusu */
+        .poll-question {
+            font-size: 24px;
+            font-weight: bold;
+            border-bottom: 2px solid #53fc18;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            word-wrap: break-word; /* Uzun sorular satır atlasın */
+        }
+
+        /* Anket Seçenekleri */
+        .poll-options {
+            list-style-type: none;
+            padding-left: 0;
+            font-size: 20px;
+        }
+
+        .poll-options li {
+            padding: 5px 0;
+            word-wrap: break-word;
+        }
+
+        /* Bağlantı durumu veya hatalar için */
+        .status-message {
+            font-size: 16px;
+            color: #aaa;
+        }
+        .error-message {
+            font-size: 16px;
+            color: #ff4d4d;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="poll-container">
+    </div>
+
+    <script>
         // ------- AYARLAR -------
         // Senin BULDUĞUN CHATROOM ID'si
         const KICK_CHATROOM_ID = 7505488;
@@ -118,3 +206,5 @@
         document.addEventListener('DOMContentLoaded', connectToKickChat);
 
     </script>
+</body>
+</html>
