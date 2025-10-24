@@ -1,9 +1,9 @@
 <script>
         // ------- AYARLAR -------
-        // Senin bulduğun DOĞRUDAN CHATROOM ID'si
+        // Senin BULDUĞUN CHATROOM ID'si
         const KICK_CHATROOM_ID = 7505488;
         
-        // Kick'in Pusher (WebSocket) bilgileri (DEĞİŞMEYECEK)
+        // Kick'in Pusher (WebSocket) bilgileri
         const PUSHER_APP_KEY = 'eb1d5f283081a78b932c';
         const PUSHER_CLUSTER = 'us-1';
         // ---------------------
@@ -32,7 +32,7 @@
             const parts = [...command.matchAll(regex)].map(match => match[1]);
 
             if (parts.length < 2) {
-                console.warn("Geçersiz anket formatı.");
+                console.warn("Geçersiz anket formatı. En az 1 soru ve 1 seçenek gerekli.");
                 return;
             }
 
@@ -49,41 +49,31 @@
             
             pollHTML += '</ul>';
 
-            // Oluşturulan HTML'i ekrana bas ve görünür yap
             pollContainer.innerHTML = pollHTML;
             pollContainer.classList.add('visible');
-            
-            // Anket 60 saniye sonra otomatik kapanacak (isteğe bağlı)
-            // Ya da !anketkapat komutu ile manuel kapanacak.
-            /*
-            setTimeout(() => {
-                 pollContainer.classList.remove('visible');
-                 setTimeout(() => { pollContainer.innerHTML = ''; }, 500);
-            }, 60000); 
-            */
         }
 
         // Kick chat'ine bağlanmak için ana fonksiyon
         function connectToKickChat() {
             try {
-                
-                pollContainer.innerHTML = `<div class="status-message">Bağlantı kuruluyor... (Chatroom ID: ${KICK_CHATROOM_ID})</div>`;
+                // Bağlantı durumunu göster
+                pollContainer.innerHTML = `<div class="status-message">Chat'e bağlanılıyor... (ID: ${KICK_CHATROOM_ID})</div>`;
                 pollContainer.classList.add('visible'); 
 
-                // Pusher (WebSocket) ile chat'e bağlan
+                // 1. Adım: Pusher (WebSocket) ile chat'e bağlan
                 const pusher = new Pusher(PUSHER_APP_KEY, {
                     cluster: PUSHER_CLUSTER,
                     forceTLS: true
                 });
 
-                // Doğru chat odası kanalına abone ol
+                // 2. Adım: Doğrudan Chatroom ID ile kanala abone ol
                 const channel = pusher.subscribe(`chat-room.${KICK_CHATROOM_ID}`);
 
                 // Bağlantı başarılı olduğunda
                 pusher.connection.bind('connected', () => {
                     console.log("Kick chat'e başarıyla bağlandı!");
                     pollContainer.innerHTML = `<div class="status-message">Bağlantı başarılı! Anket bekleniyor...</div>`;
-                    // 5 saniye sonra "Bağlandı" mesajını gizle
+                    // 5 saniye sonra durumu gizle
                     setTimeout(() => {
                         pollContainer.classList.remove('visible');
                         pollContainer.innerHTML = ''; 
@@ -93,18 +83,15 @@
                 // Bağlantı hatası
                 pusher.connection.bind('error', (err) => {
                     console.error("Pusher bağlantı hatası:", err);
-                    pollContainer.innerHTML = `<div class="error-message">Hata: Chat'e bağlanılamadı.</div>`;
+                    pollContainer.innerHTML = `<div class="error-message">Hata: Chat'e bağlanılamadı. Kod ve ID'yi kontrol edin.</div>`;
                     pollContainer.classList.add('visible');
                 });
 
-                // Yeni chat mesajlarını dinle
+                // 3. Adım: Yeni chat mesajlarını dinle
                 channel.bind('App\\Events\\ChatMessageEvent', (data) => {
                     const messageData = JSON.parse(data.data);
                     
                     const messageContent = messageData.message.trim();
-                    const sender = messageData.sender.username;
-
-                    console.log(`${sender}: ${messageContent}`);
 
                     // Anket Komutu Kontrolü
                     if (messageContent.startsWith('!poll ')) {
@@ -113,7 +100,6 @@
                     
                     // Anketi kapatmak için komut
                     if (messageContent === '!anketkapat' || messageContent === '!endpoll') {
-                         console.log("Anket kapatma komutu alındı.");
                          pollContainer.classList.remove('visible');
                          setTimeout(() => {
                             pollContainer.innerHTML = '';
