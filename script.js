@@ -2,7 +2,7 @@
 // Senin Kick Kanal ID'n. Bu, kick.com/SENIN-KULLANICI-ADIN adresindeki
 // kullanıcı adın değil, API'nin kullandığı sayısal ID.
 // Bana verdiğin ID'yi buraya giriyorum:
-const KICK_CHANNEL_ID = '7593731';
+const KICK_CHANNEL_ID = '7505488';
 
 // --- GLOBAL DEĞİŞKENLER ---
 
