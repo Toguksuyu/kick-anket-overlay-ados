@@ -30,6 +30,7 @@ function connectToChat(chatroomId) {
   }
 
   const pusher = new Pusher(KICK_PUSHER_KEY, {
+    cluster: 'us2', // <--- EKSİK OLAN SATIR BUYDU!
     wsHost: KICK_PUSHER_CLUSTER,
     wsPort: 443,
     wssPort: 443,
