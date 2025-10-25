@@ -3,6 +3,8 @@
 const KICK_CHATROOM_ID = '7505488';
 // Kick'in genel Pusher anahtarı
 const KICK_PUSHER_KEY = 'KIeR3t246qfg54we2b3l';
+// Kick'in özel sunucusu
+const KICK_PUSHER_HOST = 'ws-us2.pusher.com';
 
 // --- Anket Durumu ---
 let anketAktif = false;
@@ -25,10 +27,15 @@ function connectToChat(chatroomId) {
     pollContainer.innerHTML = '';
   }
 
-  // --- En son çalışan, basitleştirilmiş ayarlar ---
+  // --- BU SEFER ÇALIŞACAK AYARLAR ---
   const pusher = new Pusher(KICK_PUSHER_KEY, {
-    cluster: 'us2', // Sadece bu ve forceTLS yeterli
-    forceTLS: true,
+    cluster: 'us2',
+    wsHost: KICK_PUSHER_HOST,
+    wssHost: KICK_PUSHER_HOST, // Güvenli (TLS) host
+    forceTLS: true,           // Sadece güvenli (wss) bağlantı zorla
+    disableStats: true,
+    enabledTransports: ['wss'], // SADECE GÜVENLİ WEBSOCKET'e izin ver
+    // Portları belirtmiyoruz, forceTLS:true bunu halletmeli (port 443)
   });
   // --- Ayarlar Bitti ---
 
@@ -93,9 +100,9 @@ function connectToChat(chatroomId) {
     console.log('Kick chatine başarıyla bağlandı!');
   });
   pusher.connection.bind('error', (err) => {
-    // Hatayı daha detaylı görmek için
     console.error('Pusher bağlantı hatası:', err);
-    let errorMsg = err.error ? err.error.message : (err.message || JSON.stringify(err));
+    // Hatayı düzgün görelim diye JSON'a çeviriyoruz
+    let errorMsg = JSON.stringify(err);
     pollContainer.innerHTML = `HATA: Chat sunucusuna bağlanılamadı. (${errorMsg})`;
     pollContainer.classList.remove('hidden');
   });
