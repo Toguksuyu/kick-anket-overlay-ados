@@ -16,8 +16,7 @@ let oyVerenler = new Set();
 
 // --- HTML Elementleri ---
 const pollContainer = document.getElementById('poll-container');
-const pollQuestion = document.getElementById('poll-question');
-const pollOptions = document.getElementById('poll-options');
+// pollQuestion ve pollOptions'ı globalde tutmuyoruz, anketiGoster içinde oluşturacağız
 
 // --- Ana Fonksiyonlar ---
 
@@ -110,7 +109,7 @@ function connectToChat(chatroomId) {
   });
   pusher.connection.bind('error', (err) => {
     console.error('Pusher bağlantı hatası:', err);
-    pollContainer.innerHTML = 'HATA: Chat sunucusuna bağlanılamadı.';
+    pollContainer.innerHTML = 'HATA: Chat sunucusuna bağlanılamadı. (Pusher Error)';
     pollContainer.classList.remove('hidden');
   });
 }
@@ -128,8 +127,15 @@ function anketiGoster() {
   const pollQuestion = document.getElementById('poll-question');
   const pollOptions = document.getElementById('poll-options');
 
-  pollQuestion.textContent = anketVerisi.soru;
-  pollOptions.innerHTML = ''; // Eski seçenekleri temizle
+  if (pollQuestion) {
+    pollQuestion.textContent = anketVerisi.soru;
+  }
+  if (pollOptions) {
+    pollOptions.innerHTML = ''; // Eski seçenekleri temizle
+  } else {
+    console.error('poll-options elementi bulunamadı!');
+    return;
+  }
 
   anketVerisi.secenekler.forEach((option, index) => {
     const li = document.createElement('li');
