@@ -1,22 +1,19 @@
 // --- Ayarlar ---
-// Chatroom ID'niz (ados için 7505488) - ARTIK DİREKT BUNU KULLANIYORUZ
+// Chatroom ID'niz (ados için 7505488)
 const KICK_CHATROOM_ID = '7505488';
-// Kick'in genel Pusher anahtarı (Bu değişmez)
+// Kick'in genel Pusher anahtarı
 const KICK_PUSHER_KEY = 'KIeR3t246qfg54we2b3l';
-const KICK_PUSHER_CLUSTER = 'ws-us2.pusher.com';
 
 // --- Anket Durumu ---
 let anketAktif = false;
 let anketVerisi = {
   soru: '',
-  secenekler: [], // { text: 'Seçenek 1', votes: 0 } formatında olacak
+  secenekler: [],
 };
-// Birden fazla oy kullanmayı engellemek için
 let oyVerenler = new Set();
 
 // --- HTML Elementleri ---
 const pollContainer = document.getElementById('poll-container');
-// pollQuestion ve pollOptions'ı globalde tutmuyoruz, anketiGoster içinde oluşturacağız
 
 // --- Ana Fonksiyonlar ---
 
@@ -24,20 +21,16 @@ const pollContainer = document.getElementById('poll-container');
  * 1. Adım: Verilen Chatroom ID'si ile Kick chat'ine bağlanır
  */
 function connectToChat(chatroomId) {
-  // Hata mesajı varsa temizle (önceki denemelerden kalma)
   if (pollContainer.innerHTML.startsWith('HATA')) {
     pollContainer.innerHTML = '';
   }
 
+  // --- YENİ BASİTLEŞTİRİLMİŞ AYARLAR ---
   const pusher = new Pusher(KICK_PUSHER_KEY, {
-    cluster: 'us2', // <--- EKSİK OLAN SATIR BUYDU!
-    wsHost: KICK_PUSHER_CLUSTER,
-    wsPort: 443,
-    wssPort: 443,
-    disableStats: true,
+    cluster: 'us2', // Sadece bu ve forceTLS yeterli
     forceTLS: true,
-    enabledTransports: ['ws', 'wss'],
   });
+  // --- YENİ AYARLAR BİTTİ ---
 
   const channel = pusher.subscribe(`chatrooms.${chatroomId}.v2`);
   console.log(`Kanala abone olunuyor: chatrooms.${chatroomId}.v2`);
@@ -49,21 +42,16 @@ function connectToChat(chatroomId) {
     const gonderen = messageData.sender;
     const gonderenID = gonderen.id;
 
-    // Sadece yayın sahibinin komutlarını dinle
     const isYayinSahibi = gonderen.identity.badges.some(
       (badge) => badge.type === 'broadcaster'
     );
 
     // --- Anket Başlatma Komutu ---
-    // Örnek: !poll "Soru bu" "Seçenek 1" "Seçenek 2" "Seçenek 3"
     if (icerik.startsWith('!poll ') && isYayinSahibi) {
-      // Tırnak içindeki her şeyi yakala
       const parcalar = icerik.match(/"(.*?)"/g);
       if (parcalar && parcalar.length >= 3) {
-        // En az 1 soru ve 2 seçenek olmalı
-        // Önceki anketi sıfırla
         oyVerenler.clear();
-        anketVerisi.soru = parcalar[0].replace(/"/g, ''); // İlk parça soru
+        anketVerisi.soru = parcalar[0].replace(/"/g, '');
         anketVerisi.secenekler = parcalar.slice(1).map((opt) => ({
           text: opt.replace(/"/g, ''),
           votes: 0,
@@ -79,7 +67,6 @@ function connectToChat(chatroomId) {
       if (anketAktif) {
         anketAktif = false;
         console.log('Anket bitirildi.');
-        // Sonuçları 10 saniye göster ve gizle
         setTimeout(() => {
           pollContainer.classList.add('hidden');
         }, 10000);
@@ -87,18 +74,15 @@ function connectToChat(chatroomId) {
     }
 
     // --- Oy Kullanma ---
-    // Sadece anket aktifken ve mesaj sadece bir sayı ise
     else if (anketAktif && /^\d+$/.test(icerik)) {
       if (oyVerenler.has(gonderenID)) {
-        // Bu kişi zaten oy kullanmış
         return;
       }
 
       const vote = parseInt(icerik);
-      // Geçerli bir seçenek numarası mı? (örn: 1, 2, 3...)
       if (vote > 0 && vote <= anketVerisi.secenekler.length) {
-        anketVerisi.secenekler[vote - 1].votes++; // Diziler 0'dan başladığı için -1
-        oyVerenler.add(gonderenID); // Oy vereni listeye ekle
+        anketVerisi.secenekler[vote - 1].votes++;
+        oyVerenler.add(gonderenID);
         anketiGuncelle();
         console.log(`${gonderen.username} oy kullandı: ${vote}`);
       }
@@ -109,8 +93,10 @@ function connectToChat(chatroomId) {
     console.log('Kick chatine başarıyla bağlandı!');
   });
   pusher.connection.bind('error', (err) => {
+    // Hatayı daha detaylı görmek için
     console.error('Pusher bağlantı hatası:', err);
-    pollContainer.innerHTML = 'HATA: Chat sunucusuna bağlanılamadı. (Pusher Error)';
+    let errorMsg = err.message || JSON.stringify(err);
+    pollContainer.innerHTML = `HATA: Chat sunucusuna bağlanılamadı. (${errorMsg})`;
     pollContainer.classList.remove('hidden');
   });
 }
@@ -119,12 +105,10 @@ function connectToChat(chatroomId) {
  * 2. Adım: Anketi ekranda oluşturur ve gösterir
  */
 function anketiGoster() {
-  // Ana HTML'i temizle ve yeniden oluştur (en sağlam yöntem)
   pollContainer.innerHTML = `
     <h2 id="poll-question"></h2>
     <ul id="poll-options"></ul>
   `;
-  // Elementleri yeniden seç
   const pollQuestion = document.getElementById('poll-question');
   const pollOptions = document.getElementById('poll-options');
 
@@ -132,7 +116,7 @@ function anketiGoster() {
     pollQuestion.textContent = anketVerisi.soru;
   }
   if (pollOptions) {
-    pollOptions.innerHTML = ''; // Eski seçenekleri temizle
+    pollOptions.innerHTML = '';
   } else {
     console.error('poll-options elementi bulunamadı!');
     return;
@@ -148,9 +132,7 @@ function anketiGoster() {
     pollOptions.appendChild(li);
   });
 
-  // Kutuyu görünür yap
   pollContainer.style.display = 'block';
-  // CSS geçişi için opacity'yi değiştir
   setTimeout(() => pollContainer.classList.remove('hidden'), 50);
 }
 
@@ -158,7 +140,6 @@ function anketiGoster() {
  * 3. Adım: Gelen oylara göre anket çubuklarını ve sayılarını günceller
  */
 function anketiGuncelle() {
-  // pollOptions null mu diye kontrol et, eğer bir hata oluştuysa
   const pollOptions = document.getElementById('poll-options');
   if (!pollOptions) return;
 
@@ -182,5 +163,4 @@ function anketiGuncelle() {
 }
 
 // --- Başlangıç ---
-// Chatroom ID'sini zaten bildiğimiz için direkt bağlanıyoruz.
 connectToChat(KICK_CHATROOM_ID);
