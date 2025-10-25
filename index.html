@@ -22,9 +22,12 @@
         #poll-container {
             /* Konumlandırmayı kolaylaştırmak için bir kapsayıcı */
             position: absolute;
-            bottom: 50px; 
-            left: 20px;   
-            width: 450px; 
+            /* **EKRANIN TAM ORTASINA GETİRME** */
+            top: 50%; 
+            left: 50%;
+            transform: translate(-50%, -50%); 
+            /* ------------------------------- */
+            width: 500px; /* Anket kutusunun genişliği */
             
             /* Görünüm stilleri */
             background-color: rgba(10, 10, 20, 0.85); 
@@ -37,14 +40,13 @@
             
             /* Başlangıçta görünmez yapıp, anket gelince görünür yapacağız */
             opacity: 0;
-            transform: translateY(20px); 
             transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
         /* Anket kutusu görünür olduğunda */
         #poll-container.visible {
             opacity: 1;
-            transform: translateY(0);
+            transform: translate(-50%, -50%);
         }
 
         /* Anket Sorusu */
@@ -73,10 +75,12 @@
         .status-message {
             font-size: 16px;
             color: #aaa;
+            text-align: center;
         }
         .error-message {
             font-size: 16px;
             color: #ff4d4d;
+            text-align: center;
         }
 
     </style>
@@ -88,8 +92,8 @@
 
     <script>
         // ------- AYARLAR -------
-        // Chatroom ID'si
-        const KICK_CHATROOM_ID = 7505488;
+        // YENİ VE DOĞRULANMIŞ CHATROOM ID'Sİ
+        const KICK_CHATROOM_ID = 7593731; 
         
         // Kick'in Pusher (WebSocket) bilgileri
         const PUSHER_APP_KEY = 'eb1d5f283081a78b932c';
@@ -151,10 +155,9 @@
                 const pusher = new Pusher(PUSHER_APP_KEY, {
                     cluster: PUSHER_CLUSTER,
                     forceTLS: true,
-                    // Bu kısım, kısıtlı ağlarda bağlantı kurmaya yardımcı olur
-                    ws: false, 
+                    ws: false, // WebSocket'i devre dışı bırak
                     httpHost: 'sockjs-us1.pusher.com',
-                    enabledTransports: ['xhr_streaming', 'xhr_polling'] 
+                    enabledTransports: ['xhr_streaming', 'xhr_polling'] // Yalnızca HTTP yöntemlerini kullan
                 });
 
                 // 2. Adım: Doğrudan Chatroom ID ile kanala abone ol
