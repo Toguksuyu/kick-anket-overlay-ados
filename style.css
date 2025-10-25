@@ -1,0 +1,94 @@
+/* Sayfanın tamamı için temel ayarlar */
+body {
+    /* OBS'te şeffaflık için arka planı transparan yapıyoruz */
+    background-color: transparent;
+    font-family: Arial, sans-serif;
+    color: white;
+    margin: 20px;
+    overflow: hidden; /* Gereksiz kaydırma çubuklarını gizle */
+}
+
+/* Anketin ana kutusu */
+#poll-container {
+    background-color: rgba(0, 0, 0, 0.7); /* Hafif şeffaf siyah arka plan */
+    border-radius: 10px;
+    padding: 20px;
+    width: 450px; /* Anketin genişliği, değiştirebilirsiniz */
+    border: 2px solid #53fc18; /* Kick yeşili kenarlık */
+    box-shadow: 0 0 15px rgba(83, 252, 24, 0.5); /* Yeşil bir parlama efekti */
+    
+    /* Gizleme/Gösterme animasyonu için */
+    transition: opacity 0.5s, transform 0.5s;
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Anket gizliyken uygulanacak stiller */
+#poll-container.hidden {
+    opacity: 0;
+    transform: scale(0.9); /* Hafifçe küçülerek kaybolma efekti */
+    /* Gizliyken etkileşime girmemesi için */
+    pointer-events: none; 
+}
+
+/* Anket başlığı (Soru) */
+#poll-title {
+    margin-top: 0;
+    font-size: 24px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    text-align: center;
+    border-bottom: 1px solid #53fc18;
+    padding-bottom: 10px;
+}
+
+/* Anket seçeneklerinin listesi */
+#poll-options {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Her bir anket seçeneği */
+.poll-option {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    position: relative; /* Oy barı için gerekli */
+    overflow: hidden; /* Barın dışarı taşmasını engelle */
+    
+    /* Yazıların barın önünde durması için */
+    z-index: 2; 
+    
+    /* Seçenek yazısı ve oy sayısını yan yana dizmek için */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+}
+
+/* Oyları gösteren renkli çubuk */
+.poll-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background-color: #53fc18; /* Kick yeşili */
+    width: 0%; /* Genişlik JavaScript ile ayarlanacak (örn: %50) */
+    opacity: 0.7;
+    transition: width 0.3s ease-in-out; /* Genişlik değişim animasyonu */
+    z-index: -1; /* Yazıların arkasında kalması için */
+}
+
+/* Seçenek metni (örn: "Cevap 1 (1)") */
+.option-text {
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+}
+
+/* Oy sayısı (örn: "10 Oy") */
+.option-votes {
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+}
