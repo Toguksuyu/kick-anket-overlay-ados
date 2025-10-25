@@ -27,7 +27,8 @@ const pollOptions = document.getElementById('poll-options');
 async function getChatroomId() {
   try {
     const response = await fetch(
-      `https://kick.com/api/v2/channels/${KICK_CHANNEL_ID}`
+  `https://api.allorigins.win/raw?url=https://kick.com/api/v2/channels/${KICK_CHANNEL_ID}`
+);
     );
     if (!response.ok) throw new Error('Kanal bilgisi alınamadı.');
     const data = await response.json();
