@@ -1,6 +1,6 @@
 // --- Ayarlar ---
-// Kanal ID'niz (ados için 7593731)
-const KICK_CHANNEL_ID = '7593731';
+// Chatroom ID'niz (ados için 7505488) - ARTIK DİREKT BUNU KULLANIYORUZ
+const KICK_CHATROOM_ID = '7505488';
 // Kick'in genel Pusher anahtarı (Bu değişmez)
 const KICK_PUSHER_KEY = 'KIeR3t246qfg54we2b3l';
 const KICK_PUSHER_CLUSTER = 'ws-us2.pusher.com';
@@ -22,33 +22,14 @@ const pollOptions = document.getElementById('poll-options');
 // --- Ana Fonksiyonlar ---
 
 /**
- * 1. Adım: Kanal ID'sinden Chatroom ID'sini alır
- */
-async function getChatroomId() {
-  try {
-    const response = await fetch(
-  `https://api.allorigins.win/raw?url=https://kick.com/api/v2/channels/${KICK_CHANNEL_ID}`
-);
-    );
-    if (!response.ok) throw new Error('Kanal bilgisi alınamadı.');
-    const data = await response.json();
-    if (!data.chatroom || !data.chatroom.id)
-      throw new Error('Chatroom ID bulunamadı.');
-
-    console.log('Chatroom ID alındı:', data.chatroom.id);
-    return data.chatroom.id;
-  } catch (error) {
-    console.error('Hata:', error);
-    // Hata olursa ekranda göster
-    pollContainer.innerHTML = `HATA: Kick kanal bilgisi alınamadı. (${error.message})`;
-    pollContainer.classList.remove('hidden');
-  }
-}
-
-/**
- * 2. Adım: Alınan Chatroom ID'si ile Kick chat'ine bağlanır
+ * 1. Adım: Verilen Chatroom ID'si ile Kick chat'ine bağlanır
  */
 function connectToChat(chatroomId) {
+  // Hata mesajı varsa temizle (önceki denemelerden kalma)
+  if (pollContainer.innerHTML.startsWith('HATA')) {
+    pollContainer.innerHTML = '';
+  }
+
   const pusher = new Pusher(KICK_PUSHER_KEY, {
     wsHost: KICK_PUSHER_CLUSTER,
     wsPort: 443,
@@ -129,13 +110,24 @@ function connectToChat(chatroomId) {
   });
   pusher.connection.bind('error', (err) => {
     console.error('Pusher bağlantı hatası:', err);
+    pollContainer.innerHTML = 'HATA: Chat sunucusuna bağlanılamadı.';
+    pollContainer.classList.remove('hidden');
   });
 }
 
 /**
- * 3. Adım: Anketi ekranda oluşturur ve gösterir
+ * 2. Adım: Anketi ekranda oluşturur ve gösterir
  */
 function anketiGoster() {
+  // Ana HTML'i temizle ve yeniden oluştur (en sağlam yöntem)
+  pollContainer.innerHTML = `
+    <h2 id="poll-question"></h2>
+    <ul id="poll-options"></ul>
+  `;
+  // Elementleri yeniden seç
+  const pollQuestion = document.getElementById('poll-question');
+  const pollOptions = document.getElementById('poll-options');
+
   pollQuestion.textContent = anketVerisi.soru;
   pollOptions.innerHTML = ''; // Eski seçenekleri temizle
 
@@ -156,9 +148,13 @@ function anketiGoster() {
 }
 
 /**
- * 4. Adım: Gelen oylara göre anket çubuklarını ve sayılarını günceller
+ * 3. Adım: Gelen oylara göre anket çubuklarını ve sayılarını günceller
  */
 function anketiGuncelle() {
+  // pollOptions null mu diye kontrol et, eğer bir hata oluştuysa
+  const pollOptions = document.getElementById('poll-options');
+  if (!pollOptions) return;
+
   const toplamOy = anketVerisi.secenekler.reduce(
     (acc, opt) => acc + opt.votes,
     0
@@ -179,9 +175,5 @@ function anketiGuncelle() {
 }
 
 // --- Başlangıç ---
-// Sayfa yüklendiğinde önce chatroom ID'sini al, sonra chat'e bağlan
-getChatroomId().then((chatroomId) => {
-  if (chatroomId) {
-    connectToChat(chatroomId);
-  }
-});
+// Chatroom ID'sini zaten bildiğimiz için direkt bağlanıyoruz.
+connectToChat(KICK_CHATROOM_ID);
