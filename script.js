@@ -27,7 +27,7 @@ function connectToChat(chatroomId) {
     pollContainer.innerHTML = '';
   }
 
-  // --- BU SEFER ÇALIŞACAK AYARLAR ---
+  // --- SON ÇALIŞAN AYARLAR ---
   const pusher = new Pusher(KICK_PUSHER_KEY, {
     cluster: 'us2',
     wsHost: KICK_PUSHER_HOST,
@@ -35,7 +35,6 @@ function connectToChat(chatroomId) {
     forceTLS: true,           // Sadece güvenli (wss) bağlantı zorla
     disableStats: true,
     enabledTransports: ['wss'], // SADECE GÜVENLİ WEBSOCKET'e izin ver
-    // Portları belirtmiyoruz, forceTLS:true bunu halletmeli (port 443)
   });
   // --- Ayarlar Bitti ---
 
